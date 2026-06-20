@@ -1,102 +1,211 @@
-# ⚡ CrisisCommand
+# CrisisCommand
 
-> AI-powered emergency crisis management platform — built for speed and impact.
+> AI-powered emergency operations dashboard for crisis reporting, response coordination, resource management, and situation awareness.
 
-![Stack](https://img.shields.io/badge/Frontend-React%20%2B%20Vite%20%2B%20Tailwind-blue)
-![Stack](https://img.shields.io/badge/Backend-Node.js%20%2B%20Express-green)
-![Stack](https://img.shields.io/badge/AI-Google%20Gemini-orange)
-![Deploy](https://img.shields.io/badge/Frontend-Vercel-black)
-![Deploy](https://img.shields.io/badge/Backend-Render-purple)
+[Frontend](#deployment-links) | [Backend](#deployment-links) | [Tech Stack](#tech-stack) | [Screenshots](#screenshots) | [Setup](#local-development)
 
 ---
 
-## 🚀 Features
+## Problem Statement
 
-- 🗺️ **Real-time Crisis Dashboard** — Live KPIs, active crises, severity tracking
-- 🆕 **Crisis Reporting** — Form with category, severity, location, affected count
-- 🔍 **Crisis Management** — Filter, search, update status, add timeline events
-- 🤖 **AI Analysis** — Gemini AI analyzes any crisis: situation, actions, resources, ETA
-- 📋 **SITREP Generator** — Auto-generates formal situation reports
-- 🎯 **AI Prioritization** — AI ranks all active crises and creates action plans
-- 💬 **AI Chat** — Natural language Q&A with emergency management context
-- 📦 **Resource Management** — Track teams, deploy/standby/available status
-- 📊 **Analytics** — Charts by severity & category, alerts feed, activity timeline
-- 🔔 **Alert System** — Auto-alerts on new crisis creation
+Emergency response teams often work across fragmented tools, delayed updates, and inconsistent situational awareness. During a live incident, that creates avoidable delays in triage, resource allocation, and command decisions.
+
+CrisisCommand solves that gap by giving responders one command center for crisis intake, live tracking, AI-assisted prioritization, resource coordination, and operational reporting.
 
 ---
 
-## 🛠️ Tech Stack
+## Solution
 
-| Layer      | Technology                        |
-|------------|-----------------------------------|
-| Frontend   | React 18, Vite, Tailwind CSS 3    |
-| Routing    | React Router v6                   |
-| Charts     | Recharts                          |
-| Icons      | Lucide React                      |
-| HTTP       | Axios                             |
-| Backend    | Node.js + Express                 |
-| AI         | Google Gemini (gemini-1.5-flash)  |
-| Storage    | In-memory (no database)           |
-| Deploy FE  | Vercel                            |
-| Deploy BE  | Render                            |
+CrisisCommand is a full-stack crisis management platform designed for emergency operations centers and hackathon demos alike.
+
+It combines:
+- A real-time crisis dashboard
+- Structured crisis intake
+- Resource tracking and assignment
+- AI chat, prioritization, resource advice, and SITREP generation
+- Analytics and alerts for command visibility
+
+The goal is simple: help teams move from incident report to operational action faster.
 
 ---
 
-## ⚡ Quick Start
+## Features
+
+- Crisis creation with title, severity, category, location, affected population, and description
+- Crisis list with filtering, status management, and detail views
+- Resource management with availability and deployment status
+- AI Command Center with:
+  - Emergency Chat
+  - Crisis Prioritization
+  - Resource Advisor
+  - SITREP Generator
+- Live dashboard KPIs for active crises, critical incidents, affected population, and resource readiness
+- Analytics views with charts, alerts, and activity timelines
+- Automatic dashboard refresh via polling
+- Responsive dark-mode interface optimized for emergency operations workflows
+
+---
+
+## Architecture
+
+### High-Level Flow
+
+```text
+React + Vite frontend
+        |
+        | Axios API requests
+        v
+Express backend API
+        |
+        | In-memory crisis/resource store
+        | AI orchestration layer
+        v
+Groq-powered emergency decision support
+```
+
+### Backend Services
+
+- `GET /health`
+- `GET /api/crises`
+- `POST /api/crises`
+- `GET /api/resources`
+- `GET /api/analytics/overview`
+- `POST /api/ai/chat`
+- `POST /api/ai/prioritize`
+- `POST /api/ai/generate-report`
+
+### Frontend Pages
+
+- Dashboard
+- Crises
+- Crisis Detail
+- Create Crisis
+- Resources
+- AI Command
+- Analytics
+
+---
+
+## Screenshots
+
+Add your project screenshots here to make the submission stand out.
+
+Recommended screenshots:
+- Dashboard
+- Crisis list
+- Crisis detail with AI analysis
+- AI Command Center
+- Analytics view
+
+Example layout:
+
+```md
+![Dashboard](./docs/screenshots/dashboard.png)
+![AI Command](./docs/screenshots/ai-command.png)
+![Analytics](./docs/screenshots/analytics.png)
+```
+
+---
+
+## Deployment Links
+
+Update these with your live demo URLs:
+
+- Frontend: `https://your-vercel-app.vercel.app`
+- Backend: `https://your-render-service.onrender.com`
+- Health check: `https://your-render-service.onrender.com/health`
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 18, Vite, Tailwind CSS |
+| Routing | React Router |
+| HTTP | Axios |
+| Charts | Recharts |
+| Icons | Lucide React |
+| Notifications | React Hot Toast |
+| Backend | Node.js, Express |
+| AI | Groq |
+| Runtime Storage | In-memory store |
+| Deployment | Vercel, Render |
+
+---
+
+## Local Development
+
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+- Groq API key
+
+### Backend
 
 ```bash
-# Clone
-git clone https://github.com/YOUR_USERNAME/crisiscommand.git
-cd crisiscommand
-
-# Backend
 cd backend
-cp .env.example .env      # Add GEMINI_API_KEY
+cp .env.example .env
 npm install
-npm run dev               # http://localhost:5000
+npm run dev
+```
 
-# Frontend (new terminal)
+### Frontend
+
+```bash
 cd frontend
-cp .env.example .env      # VITE_API_URL=http://localhost:5000
+cp .env.example .env
 npm install
-npm run dev               # http://localhost:5173
+npm run dev
+```
+
+### Environment Variables
+
+#### Backend
+
+```env
+PORT=5000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=llama-3.3-70b-versatile
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=100
+```
+
+#### Frontend
+
+```env
+VITE_API_URL=http://localhost:5000
 ```
 
 ---
 
-## 📡 API Overview
+## Why This Can Win
 
-```
-GET  /health                         # Health check
-GET  /api/crises                     # List crises (filterable)
-POST /api/crises                     # Create crisis
-GET  /api/crises/:id                 # Crisis detail
-PATCH /api/crises/:id/status         # Update status
-POST /api/crises/:id/timeline        # Add timeline event
-POST /api/ai/analyze/:crisisId       # AI crisis analysis
-POST /api/ai/chat                    # AI chat
-POST /api/ai/prioritize              # AI prioritization
-POST /api/ai/generate-report         # Generate SITREP
-GET  /api/resources                  # List resources
-POST /api/resources                  # Add resource
-GET  /api/analytics/overview         # KPI stats
-GET  /api/analytics/alerts           # Alert feed
-```
+- Clear real-world problem with immediate relevance
+- Strong command-center UX that feels demo-ready
+- AI features are integrated into real workflows, not bolted on
+- Polished visuals with operational focus
+- Covers both tactical response and executive visibility
 
 ---
 
-## 📦 Deployment
+## Future Scope
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for full step-by-step guide.
-
-**Frontend → Vercel** | **Backend → Render** | **AI → Google Gemini Free Tier**
+- Persistent database storage
+- Role-based access control
+- Map-based incident and resource visualization
+- WebSocket live updates instead of polling
+- Exportable PDF incident reports
+- SMS/email alerting for field teams
+- Audit logs and command history
+- Multi-agency collaboration and permissions
 
 ---
 
-## 🏗️ Architecture
+## License
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full architecture, data models, and development order.
+This project is intended for hackathon and prototype use.
 
----
-
-*Built with ⚡ for hackathon speed.*

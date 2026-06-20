@@ -2,7 +2,7 @@
 
 ## Overview
 CrisisCommand is an AI-powered emergency crisis management platform built for hackathon speed.
-It leverages Google Gemini for intelligent crisis analysis, resource recommendations, and decision support.
+It leverages Groq for intelligent crisis analysis, resource recommendations, and decision support.
 
 ---
 
@@ -188,7 +188,7 @@ CrisisCommand/
 PORT=5000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
-GEMINI_API_KEY=your_gemini_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX=100
 ```
@@ -231,6 +231,6 @@ GitHub Repository
                           • Build: npm install
                           • Start: npm start
                           • Health: GET /health
-                          • Env: GEMINI_API_KEY (secret)
+                          • Env: GROQ_API_KEY (secret)
                                  FRONTEND_URL (Vercel URL)
 ```

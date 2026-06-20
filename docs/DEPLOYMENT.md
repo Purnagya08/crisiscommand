@@ -6,12 +6,12 @@
 - GitHub account
 - Vercel account (free)
 - Render account (free)
-- Google Gemini API key (free at aistudio.google.com)
+- Groq API key (free at console.groq.com)
 
 ---
 
-## Step 1 — Get Gemini API Key (5 min)
-1. Visit https://aistudio.google.com/app/apikey
+## Step 1 — Get Groq API Key (5 min)
+1. Visit https://console.groq.com/keys
 2. Click "Create API Key"
 3. Copy the key — you'll need it for Render
 
@@ -34,12 +34,11 @@ git push -u origin main
 1. Go to https://render.com → New → Web Service
 2. Connect your GitHub repo
 3. Set **Root Directory**: `backend`
-4. Set **Build Command**: `npm install`
+4. Set **Build Command**: `npm ci`
 5. Set **Start Command**: `npm start`
 6. Add Environment Variables:
-   - `GEMINI_API_KEY` = your Gemini API key
+   - `GROQ_API_KEY` = your Groq API key
    - `NODE_ENV` = `production`
-   - `PORT` = `5000`
    - `FRONTEND_URL` = *(leave blank for now, update after step 4)*
 7. Click **Create Web Service**
 8. Wait for deploy → Copy your Render URL (e.g., `https://crisiscommand-api.onrender.com`)
@@ -70,7 +69,7 @@ git push -u origin main
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env — set GEMINI_API_KEY
+# Edit .env — set GROQ_API_KEY
 npm install
 npm run dev
 # API running at http://localhost:5000
@@ -105,7 +104,7 @@ curl https://your-render-url.onrender.com/health
 | Issue                          | Fix                                                      |
 |-------------------------------|----------------------------------------------------------|
 | CORS errors in browser        | Ensure FRONTEND_URL is set correctly in Render           |
-| AI not responding             | Verify GEMINI_API_KEY is set in Render env vars          |
+| AI not responding             | Verify GROQ_API_KEY is set in Render env vars            |
 | Render service sleeps         | Free tier sleeps after 15 min — first request is slow    |
 | Build fails on Vercel         | Check VITE_API_URL is set in Vercel env variables        |
 | Data resets after redeploy    | Expected — in-memory storage only                        |

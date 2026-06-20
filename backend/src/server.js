@@ -16,20 +16,30 @@ const { errorHandler } = require('./middleware/errorHandler');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
+const parseOrigins = (value) => (
+  String(value || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+);
+
+const allowedOrigins = new Set([
   'http://localhost:5173',
-  'http://localhost:3000'
-];
+  'http://localhost:3000',
+  ...parseOrigins(process.env.FRONTEND_URL),
+  ...parseOrigins(process.env.FRONTEND_URLS)
+]);
+
+const isAllowedPreviewOrigin = (origin) => /^https:\/\/[^/]+\.vercel\.app$/i.test(origin);
 
 app.use(helmet());
 app.use(cors({
   origin(origin, callback) {
     if (!origin) return callback(null, true);
-    const allowed = allowedOrigins.some((allowedOrigin) => {
-      const normalized = allowedOrigin.replace(/\/$/, '');
-      return origin === normalized || origin.startsWith(normalized);
-    });
+
+    const normalized = origin.replace(/\/$/, '');
+    const allowed = allowedOrigins.has(normalized) || isAllowedPreviewOrigin(normalized);
+
     return allowed ? callback(null, true) : callback(new Error(`CORS blocked: ${origin}`));
   },
   credentials: true,

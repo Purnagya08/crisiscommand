@@ -3,15 +3,20 @@ services:
     name: crisiscommand-api
     env: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /health
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 5000
-      - key: FRONTEND_URL
-        sync: false   # Set manually in Render dashboard
-      - key: GEMINI_API_KEY
-        sync: false   # Set manually in Render dashboard — KEEP SECRET
+      - key: FRONTEND_URLS
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX
+        value: 100
