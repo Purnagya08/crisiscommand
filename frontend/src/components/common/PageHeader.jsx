@@ -2,19 +2,19 @@ import React from 'react';
 
 export default function PageHeader({ title, description, actions, badge }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-      <div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-white">{title}</h1>
+    <div className="flex flex-col gap-4 rounded-[2rem] border border-white/8 bg-slate-950/55 p-5 shadow-2xl shadow-black/20 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">{title}</h1>
           {badge && (
-            <span className="text-xs font-semibold bg-red-600/20 text-red-400 border border-red-600/30 px-2 py-1 rounded-full">
+            <span className="inline-flex items-center rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-rose-100">
               {badge}
             </span>
           )}
         </div>
-        {description && <p className="text-slate-400 text-sm mt-1">{description}</p>}
+        {description && <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{description}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }

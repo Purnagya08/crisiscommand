@@ -1,61 +1,62 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Users, Clock, ChevronRight } from 'lucide-react';
-import { severityConfig, statusConfig, categoryLabels, getCategoryIcon, formatTime, formatNumber } from '../../utils/helpers';
+import { ChevronRight, Clock3, MapPin, Users } from 'lucide-react';
+import { categoryLabels, formatNumber, formatTime, getCategoryIcon, severityConfig, statusConfig } from '../../utils/helpers';
 
-export default function CrisisCard({ crisis, onStatusChange }) {
+export default function CrisisCard({ crisis }) {
   const navigate = useNavigate();
   const sev = severityConfig[crisis.severity] || severityConfig.low;
-  const sta = statusConfig[crisis.status]     || statusConfig.active;
+  const sta = statusConfig[crisis.status] || statusConfig.active;
 
   return (
-    <div
+    <button
+      type="button"
       onClick={() => navigate(`/crises/${crisis.id}`)}
-      className={`card cursor-pointer hover:border-slate-500 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl border-l-4 ${
-        crisis.severity === 'critical' ? 'border-l-red-500' :
-        crisis.severity === 'high'     ? 'border-l-orange-500' :
-        crisis.severity === 'medium'   ? 'border-l-yellow-500' : 'border-l-green-500'
-      }`}
+      className="group w-full rounded-3xl border border-white/8 bg-slate-950/60 p-5 text-left shadow-2xl shadow-black/20 transition hover:-translate-y-0.5 hover:border-white/12 hover:bg-white/[0.03]"
     >
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <span className="text-2xl mt-0.5 shrink-0">{getCategoryIcon(crisis.category)}</span>
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/8 bg-white/5 text-xl">
+            {getCategoryIcon(crisis.category)}
+          </div>
           <div className="min-w-0">
-            <h3 className="text-white font-semibold text-base leading-tight line-clamp-1">{crisis.title}</h3>
-            <p className="text-slate-400 text-xs mt-0.5">{categoryLabels[crisis.category] || crisis.category}</p>
+            <h3 className="truncate text-base font-semibold text-white">{crisis.title}</h3>
+            <p className="mt-1 text-xs uppercase tracking-[0.22em] text-slate-500">
+              {categoryLabels[crisis.category] || crisis.category}
+            </p>
           </div>
         </div>
-        <ChevronRight size={16} className="text-slate-500 shrink-0 mt-1" />
+        <ChevronRight size={16} className="mt-2 text-slate-500 transition group-hover:translate-x-0.5 group-hover:text-white" />
       </div>
 
-      <p className="text-slate-400 text-sm line-clamp-2 mb-4">{crisis.description}</p>
+      <p className="line-clamp-2 text-sm leading-6 text-slate-400">{crisis.description}</p>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${sev.bg} ${sev.color} ${sev.border}`}>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${sev.bg} ${sev.color} ${sev.border}`}>
           {sev.label}
         </span>
-        <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${sta.bg} ${sta.color}`}>
+        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${sta.bg} ${sta.color} ${sta.border}`}>
           {sta.label}
         </span>
       </div>
 
-      <div className="flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
-        <div className="flex items-center gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center gap-3">
           {crisis.location?.city && (
-            <span className="flex items-center gap-1">
-              <MapPin size={11} /> {crisis.location.city}
+            <span className="flex items-center gap-1.5">
+              <MapPin size={12} /> {crisis.location.city}
             </span>
           )}
           {crisis.affectedCount > 0 && (
-            <span className="flex items-center gap-1">
-              <Users size={11} /> {formatNumber(crisis.affectedCount)}
+            <span className="flex items-center gap-1.5">
+              <Users size={12} /> {formatNumber(crisis.affectedCount)}
             </span>
           )}
         </div>
-        <span className="flex items-center gap-1">
-          <Clock size={11} /> {formatTime(crisis.createdAt)}
+        <span className="flex items-center gap-1.5">
+          <Clock3 size={12} /> {formatTime(crisis.createdAt)}
         </span>
       </div>
-    </div>
+    </button>
   );
 }

@@ -1,30 +1,32 @@
 import React from 'react';
 
 export default function StatCard({ title, value, icon: Icon, color = 'red', description, trend }) {
-  const colorMap = {
-    red:    'text-red-400 bg-red-900/30',
-    orange: 'text-orange-400 bg-orange-900/30',
-    blue:   'text-blue-400 bg-blue-900/30',
-    green:  'text-green-400 bg-green-900/30',
-    purple: 'text-purple-400 bg-purple-900/30',
-    yellow: 'text-yellow-400 bg-yellow-900/30',
+  const palette = {
+    red: 'from-rose-500/20 to-red-500/5 text-rose-300',
+    orange: 'from-orange-500/20 to-amber-500/5 text-orange-300',
+    blue: 'from-sky-500/20 to-cyan-500/5 text-sky-300',
+    green: 'from-emerald-500/20 to-green-500/5 text-emerald-300',
+    purple: 'from-violet-500/20 to-fuchsia-500/5 text-violet-300',
+    yellow: 'from-amber-500/20 to-yellow-500/5 text-amber-300'
   };
 
   return (
-    <div className="stat-card animate-slide-up">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-slate-400 text-sm font-medium">{title}</span>
+    <div className="rounded-3xl border border-white/8 bg-slate-950/60 p-5 shadow-2xl shadow-black/20 transition hover:-translate-y-0.5 hover:border-white/12">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-slate-400">{title}</p>
+          <div className="mt-2 text-3xl font-semibold tracking-tight text-white">{value ?? '—'}</div>
+        </div>
         {Icon && (
-          <div className={`p-2 rounded-lg ${colorMap[color] || colorMap.red}`}>
-            <Icon size={18} className={colorMap[color]?.split(' ')[0] || 'text-red-400'} />
+          <div className={`rounded-2xl bg-gradient-to-br p-3 ${palette[color] || palette.red}`}>
+            <Icon size={18} />
           </div>
         )}
       </div>
-      <div className="text-3xl font-bold text-white">{value ?? '—'}</div>
-      {description && <p className="text-slate-500 text-xs mt-1">{description}</p>}
+      {description && <p className="mt-3 text-xs leading-5 text-slate-500">{description}</p>}
       {trend !== undefined && (
-        <p className={`text-xs mt-1 font-medium ${trend >= 0 ? 'text-red-400' : 'text-green-400'}`}>
-          {trend >= 0 ? '↑' : '↓'} {Math.abs(trend)} from last hour
+        <p className={`mt-3 text-xs font-medium ${trend >= 0 ? 'text-rose-300' : 'text-emerald-300'}`}>
+          {trend >= 0 ? 'Up' : 'Down'} {Math.abs(trend)} from last hour
         </p>
       )}
     </div>

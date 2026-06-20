@@ -1,59 +1,118 @@
-import { formatDistanceToNow, format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 
 export const severityConfig = {
-  critical: { label: 'Critical', color: 'text-red-400',    bg: 'bg-red-900/50',    border: 'border-red-700',    badge: 'badge-critical', dot: 'bg-red-500'    },
-  high:     { label: 'High',     color: 'text-orange-400', bg: 'bg-orange-900/50', border: 'border-orange-700', badge: 'badge-high',     dot: 'bg-orange-500' },
-  medium:   { label: 'Medium',   color: 'text-yellow-400', bg: 'bg-yellow-900/50', border: 'border-yellow-700', badge: 'badge-medium',   dot: 'bg-yellow-500' },
-  low:      { label: 'Low',      color: 'text-green-400',  bg: 'bg-green-900/50',  border: 'border-green-700',  badge: 'badge-low',      dot: 'bg-green-500'  },
+  critical: {
+    label: 'Critical',
+    color: 'text-rose-300',
+    bg: 'bg-rose-500/10',
+    border: 'border-rose-500/20',
+    dot: 'bg-rose-400'
+  },
+  high: {
+    label: 'High',
+    color: 'text-orange-300',
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/20',
+    dot: 'bg-orange-400'
+  },
+  medium: {
+    label: 'Medium',
+    color: 'text-amber-300',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/20',
+    dot: 'bg-amber-400'
+  },
+  low: {
+    label: 'Low',
+    color: 'text-emerald-300',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/20',
+    dot: 'bg-emerald-400'
+  }
 };
 
 export const statusConfig = {
-  active:     { label: 'Active',     color: 'text-red-400',   bg: 'bg-red-900/50',   badge: 'badge-active'    },
-  contained:  { label: 'Contained',  color: 'text-blue-400',  bg: 'bg-blue-900/50',  badge: 'badge-contained' },
-  resolved:   { label: 'Resolved',   color: 'text-green-400', bg: 'bg-green-900/50', badge: 'badge-resolved'  },
+  active: {
+    label: 'Active',
+    color: 'text-rose-300',
+    bg: 'bg-rose-500/10',
+    border: 'border-rose-500/20'
+  },
+  contained: {
+    label: 'Contained',
+    color: 'text-sky-300',
+    bg: 'bg-sky-500/10',
+    border: 'border-sky-500/20'
+  },
+  resolved: {
+    label: 'Resolved',
+    color: 'text-emerald-300',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/20'
+  }
 };
 
 export const categoryLabels = {
   natural_disaster: 'Natural Disaster',
-  infrastructure:   'Infrastructure',
-  public_health:    'Public Health',
-  security:         'Security',
-  environmental:    'Environmental',
-  other:            'Other',
+  infrastructure: 'Infrastructure',
+  public_health: 'Public Health',
+  security: 'Security',
+  environmental: 'Environmental',
+  other: 'Other'
 };
 
 export const resourceStatusConfig = {
-  available:   { label: 'Available',   color: 'text-green-400', badge: 'bg-green-900/50 text-green-400 border-green-700' },
-  deployed:    { label: 'Deployed',    color: 'text-blue-400',  badge: 'bg-blue-900/50 text-blue-400 border-blue-700'   },
-  on_standby:  { label: 'On Standby',  color: 'text-yellow-400',badge: 'bg-yellow-900/50 text-yellow-400 border-yellow-700' },
-  unavailable: { label: 'Unavailable', color: 'text-slate-400', badge: 'bg-slate-700/50 text-slate-400 border-slate-600' },
+  available: {
+    label: 'Available',
+    badge: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
+  },
+  deployed: {
+    label: 'Deployed',
+    badge: 'bg-sky-500/10 text-sky-300 border-sky-500/20'
+  },
+  on_standby: {
+    label: 'On Standby',
+    badge: 'bg-amber-500/10 text-amber-300 border-amber-500/20'
+  },
+  unavailable: {
+    label: 'Unavailable',
+    badge: 'bg-slate-500/10 text-slate-300 border-slate-500/20'
+  }
 };
 
 export const formatTime = (dateStr) => {
-  try { return formatDistanceToNow(new Date(dateStr), { addSuffix: true }); }
-  catch { return 'Unknown time'; }
+  try {
+    return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+  } catch {
+    return 'Unknown time';
+  }
 };
 
 export const formatDate = (dateStr) => {
-  try { return format(new Date(dateStr), 'MMM d, yyyy HH:mm'); }
-  catch { return 'Unknown date'; }
+  try {
+    return format(new Date(dateStr), 'MMM d, yyyy h:mm a');
+  } catch {
+    return 'Unknown date';
+  }
 };
 
-export const formatNumber = (n) => {
-  if (!n && n !== 0) return '—';
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000)    return `${(n / 1000).toFixed(1)}K`;
+export const formatNumber = (value) => {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return '—';
+  const n = Number(value);
+  if (Math.abs(n) >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+  if (Math.abs(n) >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return n.toLocaleString();
 };
 
 export const getCategoryIcon = (category) => {
   const icons = {
     natural_disaster: '🌊',
-    infrastructure:   '⚡',
-    public_health:    '🏥',
-    security:         '🔒',
-    environmental:    '☣️',
-    other:            '⚠️',
+    infrastructure: '⚡',
+    public_health: '🏥',
+    security: '🔒',
+    environmental: '☣️',
+    other: '⚠️'
   };
+
   return icons[category] || '⚠️';
 };

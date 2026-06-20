@@ -1,132 +1,156 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Boxes, Users, Brain, Plus, ArrowRight, Activity, Shield } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Brain, Boxes, Plus, ShieldAlert, Siren, Users } from 'lucide-react';
 import { analyticsApi } from '../services/api';
 import { useCrises } from '../hooks/useCrises';
 import StatCard from '../components/dashboard/StatCard';
 import CrisisCard from '../components/crisis/CrisisCard';
+import TimelinePanel from '../components/common/TimelinePanel';
 import { PageLoader } from '../components/common/LoadingSpinner';
 import { formatNumber } from '../utils/helpers';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
-  const [statsLoading, setStatsLoading] = useState(true);
+  const [timeline, setTimeline] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { crises, loading: crisesLoading } = useCrises({ status: 'active' });
 
   useEffect(() => {
-    analyticsApi.getOverview()
-      .then(res => setStats(res.data))
-      .catch(console.error)
-      .finally(() => setStatsLoading(false));
+    const load = async () => {
+      try {
+        const [overviewRes, timelineRes] = await Promise.all([
+          analyticsApi.getOverview(),
+          analyticsApi.getTimeline()
+        ]);
+        setStats(overviewRes.data);
+        setTimeline(timelineRes.data || []);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
   }, []);
 
-  if (statsLoading) return <PageLoader text="Loading CrisisCommand..." />;
+  if (loading) return <PageLoader text="Loading command center..." />;
 
-  const criticalCrises = crises.filter(c => c.severity === 'critical').slice(0, 3);
-  const recentCrises   = crises.slice(0, 4);
+  const criticalCrises = crises.filter((crisis) => crisis.severity === 'critical');
+  const recentCrises = crises.slice(0, 4);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Command Center</h1>
-          <p className="text-slate-400 text-sm mt-1">Real-time crisis overview and management</p>
-        </div>
-        <Link to="/crises/new" className="btn-primary">
-          <Plus size={16} /> Report Crisis
-        </Link>
-      </div>
-
-      {/* Critical Alert Banner */}
-      {stats?.criticalCrises > 0 && (
-        <div className="bg-red-900/30 border border-red-600/50 rounded-xl p-4 flex items-center gap-3 animate-slide-up">
-          <div className="w-3 h-3 rounded-full bg-red-500 animate-ping shrink-0" />
-          <div className="flex-1">
-            <p className="text-red-300 font-semibold text-sm">
-              ⚠️ {stats.criticalCrises} CRITICAL {stats.criticalCrises === 1 ? 'CRISIS' : 'CRISES'} REQUIRE IMMEDIATE ATTENTION
+    <div className="space-y-6">
+      <section className="overflow-hidden rounded-[2rem] border border-white/8 bg-gradient-to-br from-rose-500/12 via-slate-950/60 to-cyan-500/10 p-6 shadow-2xl shadow-black/25 sm:p-8">
+        <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
+          <div>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-rose-200">
+              <Siren size={12} />
+              Emergency Operations Center
+            </div>
+            <h1 className="max-w-2xl text-3xl font-semibold tracking-tight text-white sm:text-5xl">
+              Coordinate crises, resources, and AI guidance from one command view.
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+              CrisisCommand gives responders a live operations picture across incidents, supplies, alerts, and AI-assisted planning.
             </p>
-            <p className="text-red-400/70 text-xs mt-0.5">All available command resources should be mobilized.</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link to="/crises/new" className="rounded-2xl bg-rose-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-600">
+                <span className="inline-flex items-center gap-2">
+                  <Plus size={16} />
+                  Report Crisis
+                </span>
+              </Link>
+              <Link to="/ai" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10">
+                <span className="inline-flex items-center gap-2">
+                  <Brain size={16} />
+                  Open AI Command
+                </span>
+              </Link>
+            </div>
           </div>
-          <Link to="/crises?severity=critical" className="btn-secondary text-xs py-1">
-            View All <ArrowRight size={12} />
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="rounded-3xl border border-white/8 bg-black/20 p-5">
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Critical events</p>
+              <p className="mt-3 text-4xl font-semibold text-white">{criticalCrises.length}</p>
+              <p className="mt-2 text-sm text-slate-400">Crises requiring immediate attention</p>
+            </div>
+            <div className="rounded-3xl border border-white/8 bg-black/20 p-5">
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Active response load</p>
+              <p className="mt-3 text-4xl font-semibold text-white">{stats?.deployedResources}/{stats?.totalResources}</p>
+              <p className="mt-2 text-sm text-slate-400">Teams currently in the field</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {stats?.criticalCrises > 0 && (
+        <div className="flex items-center justify-between gap-4 rounded-3xl border border-rose-500/20 bg-rose-500/10 px-5 py-4">
+          <div>
+            <p className="text-sm font-semibold text-rose-100">
+              {stats.criticalCrises} critical crisis{stats.criticalCrises === 1 ? '' : 'es'} need immediate action.
+            </p>
+            <p className="mt-1 text-xs text-rose-200/70">Prioritize staffing, evacuation, and field coordination.</p>
+          </div>
+          <Link to="/crises?severity=critical" className="inline-flex items-center gap-2 rounded-2xl border border-rose-400/20 bg-white/5 px-4 py-2 text-sm text-rose-50 transition hover:bg-white/10">
+            View critical
+            <ArrowRight size={15} />
           </Link>
         </div>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Active Crises"    value={stats?.activeCrises}       icon={AlertTriangle} color="red"    description="Require response" />
-        <StatCard title="Critical Level"   value={stats?.criticalCrises}     icon={Shield}        color="orange" description="Highest priority" />
-        <StatCard title="People Affected"  value={formatNumber(stats?.totalAffected)} icon={Users} color="blue"   description="Across all crises" />
-        <StatCard title="Resources Active" value={`${stats?.deployedResources}/${stats?.totalResources}`} icon={Boxes} color="green" description="Teams deployed" />
-      </div>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard title="Active Crises" value={stats?.activeCrises} icon={AlertTriangle} color="red" description="Open incidents needing response" />
+        <StatCard title="Critical Level" value={stats?.criticalCrises} icon={ShieldAlert} color="orange" description="Highest priority alerts" />
+        <StatCard title="People Affected" value={formatNumber(stats?.totalAffected)} icon={Users} color="blue" description="Estimated impacted population" />
+        <StatCard title="Resources Available" value={stats?.availableResources} icon={Boxes} color="green" description="Ready for deployment" />
+      </section>
 
-      {/* Second Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Contained"   value={stats?.containedCrises}  icon={Activity} color="purple" description="Under control" />
-        <StatCard title="Resolved"    value={stats?.resolvedCrises}   icon={Activity} color="green"  description="Successfully closed" />
-        <StatCard title="AI Analyses" value={stats?.aiAnalysesRun}    icon={Brain}    color="purple" description="AI recommendations run" />
-        <StatCard title="Available"   value={stats?.availableResources} icon={Boxes}  color="yellow" description="Ready to deploy" />
-      </div>
-
-      {/* Main Content: Active Crises + Critical */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Active Crises */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-white font-semibold text-lg flex items-center gap-2">
-              <AlertTriangle size={18} className="text-red-400" /> Active Crises
-            </h2>
-            <Link to="/crises" className="text-red-400 text-sm hover:text-red-300 flex items-center gap-1">
-              View all <ArrowRight size={14} />
+      <section className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-white">Active Crises</h2>
+            <Link to="/crises" className="inline-flex items-center gap-1 text-sm text-rose-200 transition hover:text-white">
+              View all
+              <ArrowRight size={14} />
             </Link>
           </div>
           {crisesLoading ? (
-            <PageLoader />
+            <PageLoader text="Loading active crises..." />
           ) : recentCrises.length === 0 ? (
-            <div className="card text-center py-10">
-              <p className="text-slate-400">No active crises. System is clear. ✅</p>
+            <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center text-slate-400">
+              No active crises right now.
             </div>
           ) : (
-            <div className="space-y-3">
-              {recentCrises.map(c => <CrisisCard key={c.id} crisis={c} />)}
+            <div className="grid gap-4">
+              {recentCrises.map((crisis) => (
+                <CrisisCard key={crisis.id} crisis={crisis} />
+              ))}
             </div>
           )}
         </div>
 
-        {/* Right Sidebar */}
         <div className="space-y-4">
-          {/* Category Breakdown */}
-          <div className="card">
-            <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-              <Activity size={16} className="text-blue-400" /> By Category
-            </h3>
-            {stats?.categoryBreakdown?.filter(c => c.count > 0).map(({ category, count }) => (
-              <div key={category} className="flex items-center justify-between py-2 border-b border-slate-700/50 last:border-0">
-                <span className="text-slate-400 text-sm capitalize">{category.replace(/_/g, ' ')}</span>
-                <span className="text-white font-semibold text-sm">{count}</span>
+          <div className="rounded-3xl border border-white/8 bg-slate-950/60 p-5 shadow-2xl shadow-black/20">
+            <h3 className="text-base font-semibold text-white">Command Snapshot</h3>
+            <div className="mt-4 space-y-3 text-sm text-slate-300">
+              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                <span>Contained crises</span>
+                <span className="font-semibold text-sky-300">{stats?.containedCrises}</span>
               </div>
-            ))}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="card">
-            <h3 className="text-white font-semibold mb-3">Quick Actions</h3>
-            <div className="space-y-2">
-              <Link to="/crises/new" className="btn-primary w-full justify-center text-sm py-2">
-                <Plus size={15} /> Report New Crisis
-              </Link>
-              <Link to="/ai" className="btn-secondary w-full justify-center text-sm py-2">
-                <Brain size={15} /> AI Command
-              </Link>
-              <Link to="/resources" className="btn-ghost w-full justify-center text-sm py-2 border border-slate-600">
-                <Boxes size={15} /> Manage Resources
-              </Link>
+              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                <span>Resolved crises</span>
+                <span className="font-semibold text-emerald-300">{stats?.resolvedCrises}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                <span>AI analyses run</span>
+                <span className="font-semibold text-violet-300">{stats?.aiAnalysesRun}</span>
+              </div>
             </div>
           </div>
+
+          <TimelinePanel title="Recent Activity" events={timeline.slice(0, 6)} />
         </div>
-      </div>
+      </section>
     </div>
   );
 }

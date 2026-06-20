@@ -1,222 +1,239 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Brain, Send, Zap, ListOrdered, Package, MessageSquare } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Brain, ListOrdered, MessageSquare, Package, Send, Sparkles, Zap } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { aiApi } from '../services/api';
 import AIResponseCard from '../components/ai/AIResponseCard';
 import PageHeader from '../components/common/PageHeader';
-import toast from 'react-hot-toast';
 
-const TABS = [
-  { id: 'chat',      label: 'AI Chat',          icon: MessageSquare },
-  { id: 'prioritize',label: 'Prioritize Crises', icon: ListOrdered   },
-  { id: 'resources', label: 'Resource Advisor',  icon: Package       },
+const tabs = [
+  { id: 'chat', label: 'AI Chat', icon: MessageSquare },
+  { id: 'prioritize', label: 'Prioritize Crises', icon: ListOrdered },
+  { id: 'resources', label: 'Resource Advisor', icon: Package }
 ];
 
 export default function AICommandPage() {
   const [activeTab, setActiveTab] = useState('chat');
-  const [messages,  setMessages]  = useState([
-    { role: 'ai', content: "Hello, I'm CrisisCommand AI — powered by Google Gemini. I can help you analyze crises, prioritize responses, allocate resources, and answer emergency management questions. How can I assist?" }
+  const [messages, setMessages] = useState([
+    {
+      role: 'ai',
+      content: "I can help analyze incidents, prioritize active crises, and recommend resources. Ask me anything about current operations."
+    }
   ]);
   const [chatInput, setChatInput] = useState('');
-  const [loading,   setLoading]   = useState(false);
-  const [aiResult,  setAiResult]  = useState(null);
-  const [resContext, setResContext] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [aiResult, setAiResult] = useState(null);
+  const [resourceContext, setResourceContext] = useState('');
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const sendChat = async (e) => {
-    e.preventDefault();
-    const msg = chatInput.trim();
-    if (!msg || loading) return;
+  const sendChat = async (event) => {
+    event.preventDefault();
+    const message = chatInput.trim();
+    if (!message || loading) return;
+
     setChatInput('');
-    setMessages(prev => [...prev, { role: 'user', content: msg }]);
+    setMessages((current) => [...current, { role: 'user', content: message }]);
     setLoading(true);
+
     try {
-      const res = await aiApi.chat(msg);
-      setMessages(prev => [...prev, { role: 'ai', content: res.data.reply }]);
+      const response = await aiApi.chat(message);
+      setMessages((current) => [...current, { role: 'ai', content: response.data.reply }]);
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'ai', content: `❌ Error: ${err.message}` }]);
       toast.error(err.message);
+      setMessages((current) => [...current, { role: 'ai', content: `Error: ${err.message}` }]);
     } finally {
       setLoading(false);
     }
   };
 
   const handlePrioritize = async () => {
-    setLoading(true); setAiResult(null);
+    setLoading(true);
+    setAiResult(null);
     try {
-      const res = await aiApi.prioritize();
-      setAiResult({ title: '🎯 Crisis Prioritization Plan', content: res.data.prioritization, timestamp: res.data.timestamp });
-      toast.success(`Prioritized ${res.data.activeCrisesCount} crises`);
-    } catch (err) { toast.error(err.message); }
-    finally { setLoading(false); }
+      const response = await aiApi.prioritize();
+      setAiResult({
+        title: 'Crisis Prioritization Plan',
+        content: response.data.prioritization,
+        timestamp: response.data.timestamp
+      });
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleResourceAdvice = async (e) => {
-    e.preventDefault();
-    setLoading(true); setAiResult(null);
+  const handleResourceAdvice = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setAiResult(null);
     try {
-      const res = await aiApi.recommendResources({ context: resContext || 'General emergency situation' });
-      setAiResult({ title: '📦 Resource Allocation Recommendations', content: res.data.recommendations, timestamp: res.data.timestamp });
-    } catch (err) { toast.error(err.message); }
-    finally { setLoading(false); }
+      const response = await aiApi.recommendResources({ context: resourceContext || 'General emergency situation' });
+      setAiResult({
+        title: 'Resource Allocation Recommendations',
+        content: response.data.recommendations,
+        timestamp: response.data.timestamp
+      });
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const quickPrompts = [
     'What are best practices for mass evacuation?',
     'How do I coordinate multiple teams during a flood?',
     'What resources are critical for a chemical spill?',
-    'Explain the Incident Command System (ICS)',
+    'Explain the Incident Command System (ICS)'
   ];
 
   return (
-    <div className="animate-fade-in">
+    <div className="space-y-6">
       <PageHeader
         title="AI Command Center"
-        description="Powered by Google Gemini — your AI emergency management advisor"
-        badge="Gemini AI"
+        description="Operational AI for analysis, prioritization, and recommendations."
+        badge="Gemini"
       />
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-slate-800 p-1 rounded-xl mb-6 w-fit">
-        {TABS.map(({ id, label, icon: Icon }) => (
+      <div className="flex flex-wrap gap-2 rounded-3xl border border-white/8 bg-slate-950/60 p-2">
+        {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
-            onClick={() => { setActiveTab(id); setAiResult(null); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              activeTab === id
-                ? 'bg-red-600 text-white shadow'
-                : 'text-slate-400 hover:text-white'
+            type="button"
+            onClick={() => {
+              setActiveTab(id);
+              setAiResult(null);
+            }}
+            className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition ${
+              activeTab === id ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-white'
             }`}
           >
-            <Icon size={15} /> {label}
+            <Icon size={15} />
+            {label}
           </button>
         ))}
       </div>
 
-      {/* ── Chat Tab ───────────────────────────────────── */}
       {activeTab === 'chat' && (
-        <div className="flex flex-col h-[600px]">
-          <div className="card flex-1 overflow-y-auto mb-4 space-y-4" id="chat-window">
-            {messages.map((m, i) => (
-              <div key={i} className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold ${
-                  m.role === 'ai' ? 'bg-purple-700 text-white' : 'bg-red-700 text-white'
-                }`}>
-                  {m.role === 'ai' ? <Brain size={15} /> : 'U'}
-                </div>
-                <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                  m.role === 'ai'
-                    ? 'bg-slate-700 text-slate-200 rounded-tl-sm'
-                    : 'bg-red-700/80 text-white rounded-tr-sm'
-                }`}>
-                  {m.content}
-                </div>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-purple-700 flex items-center justify-center">
-                  <Brain size={15} className="text-white" />
-                </div>
-                <div className="bg-slate-700 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {[0,1,2].map(i => (
-                      <div key={i} className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
-                    ))}
+        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-3xl border border-white/8 bg-slate-950/60 p-5 shadow-2xl shadow-black/20">
+            <div className="flex items-center gap-2 text-sm font-semibold text-white">
+              <Sparkles size={16} className="text-amber-300" />
+              Conversational AI
+            </div>
+
+            <div className="mt-5 h-[540px] space-y-4 overflow-y-auto rounded-2xl border border-white/8 bg-black/20 p-4">
+              {messages.map((message, index) => (
+                <div key={index} className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-2xl ${message.role === 'ai' ? 'bg-violet-500/15 text-violet-200' : 'bg-rose-500/15 text-rose-200'}`}>
+                    {message.role === 'ai' ? <Brain size={15} /> : 'U'}
                   </div>
-                  <span className="text-slate-400 text-xs">Gemini is thinking...</span>
+                  <div className={`max-w-[80%] rounded-3xl px-4 py-3 text-sm leading-6 ${message.role === 'ai' ? 'bg-white/5 text-slate-200' : 'bg-rose-500/15 text-white'}`}>
+                    {message.content}
+                  </div>
                 </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+              ))}
+              {loading && activeTab === 'chat' && (
+                <div className="flex gap-3">
+                  <div className="grid h-9 w-9 place-items-center rounded-2xl bg-violet-500/15 text-violet-200">
+                    <Brain size={15} />
+                  </div>
+                  <div className="rounded-3xl bg-white/5 px-4 py-3 text-sm text-slate-400">Gemini is thinking...</div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
-          {/* Quick Prompts */}
-          <div className="flex gap-2 mb-3 flex-wrap">
-            {quickPrompts.map(p => (
-              <button key={p} onClick={() => setChatInput(p)}
-                className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded-full transition-colors">
-                {p}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {quickPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => setChatInput(prompt)}
+                  className="rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/10 hover:text-white"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={sendChat} className="mt-4 flex gap-3">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(event) => setChatInput(event.target.value)}
+                placeholder="Ask the AI about crisis operations..."
+                className="min-w-0 flex-1 rounded-2xl border border-white/8 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none"
+              />
+              <button type="submit" disabled={loading || !chatInput.trim()} className="inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-600 disabled:opacity-60">
+                <Send size={16} />
               </button>
-            ))}
+            </form>
           </div>
 
-          <form onSubmit={sendChat} className="flex gap-3">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              placeholder="Ask the AI anything about crisis management..."
-              className="input flex-1"
-              disabled={loading}
-            />
-            <button type="submit" disabled={loading || !chatInput.trim()} className="btn-primary shrink-0">
-              <Send size={16} />
-            </button>
-          </form>
+          <div className="space-y-6">
+            <div className="rounded-3xl border border-white/8 bg-slate-950/60 p-5 shadow-2xl shadow-black/20">
+              <h3 className="text-base font-semibold text-white">Command Notes</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Use the AI for response planning, triage questions, and resource matching. Keep commands concise and include context when possible.
+              </p>
+            </div>
+            {aiResult && !loading && (
+              <AIResponseCard title={aiResult.title} content={aiResult.content} timestamp={aiResult.timestamp} />
+            )}
+          </div>
         </div>
       )}
 
-      {/* ── Prioritize Tab ─────────────────────────────── */}
       {activeTab === 'prioritize' && (
-        <div className="space-y-5">
-          <div className="card">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-orange-900/40 rounded-lg"><ListOrdered size={18} className="text-orange-400" /></div>
-              <div>
-                <h3 className="text-white font-semibold">Crisis Prioritization</h3>
-                <p className="text-slate-400 text-sm">AI will rank all active crises and create an action plan.</p>
-              </div>
-            </div>
-            <button onClick={handlePrioritize} disabled={loading} className="btn-primary">
-              <Zap size={15} /> {loading ? 'AI is analyzing...' : 'Run Prioritization AI'}
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-white/8 bg-slate-950/60 p-5 shadow-2xl shadow-black/20">
+            <h3 className="text-base font-semibold text-white">Crisis Prioritization</h3>
+            <p className="mt-2 text-sm text-slate-400">Rank active crises and generate a response plan.</p>
+            <button type="button" onClick={handlePrioritize} disabled={loading} className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-600 disabled:opacity-60">
+              <Zap size={15} />
+              {loading ? 'AI is analyzing...' : 'Run Prioritization AI'}
             </button>
           </div>
+
           {loading && (
-            <div className="card text-center py-10">
-              <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-slate-400">Gemini AI is analyzing all active crises...</p>
-            </div>
+            <div className="rounded-3xl border border-white/8 bg-slate-950/60 p-8 text-center text-slate-400">Processing active crises...</div>
           )}
+
           {aiResult && !loading && (
             <AIResponseCard title={aiResult.title} content={aiResult.content} timestamp={aiResult.timestamp} />
           )}
         </div>
       )}
 
-      {/* ── Resource Advisor Tab ───────────────────────── */}
       {activeTab === 'resources' && (
-        <div className="space-y-5">
-          <div className="card">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-blue-900/40 rounded-lg"><Package size={18} className="text-blue-400" /></div>
-              <div>
-                <h3 className="text-white font-semibold">AI Resource Advisor</h3>
-                <p className="text-slate-400 text-sm">Get resource allocation recommendations for your situation.</p>
-              </div>
-            </div>
-            <form onSubmit={handleResourceAdvice} className="space-y-3">
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-white/8 bg-slate-950/60 p-5 shadow-2xl shadow-black/20">
+            <h3 className="text-base font-semibold text-white">AI Resource Advisor</h3>
+            <p className="mt-2 text-sm text-slate-400">Describe the incident and get resource allocation guidance.</p>
+            <form onSubmit={handleResourceAdvice} className="mt-4 space-y-4">
               <textarea
-                rows={3}
-                value={resContext}
-                onChange={e => setResContext(e.target.value)}
-                placeholder="Describe the situation (optional) — e.g., 'Major flooding affecting 3 districts, critical infrastructure down...'"
-                className="input resize-none text-sm"
+                rows={4}
+                value={resourceContext}
+                onChange={(event) => setResourceContext(event.target.value)}
+                placeholder="Example: Major flooding affecting three districts with road closures and power loss..."
+                className="w-full rounded-2xl border border-white/8 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none"
               />
-              <button type="submit" disabled={loading} className="btn-primary">
-                <Package size={15} /> {loading ? 'AI is processing...' : 'Get Resource Recommendations'}
+              <button type="submit" disabled={loading} className="inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-600 disabled:opacity-60">
+                <Package size={15} />
+                {loading ? 'AI is processing...' : 'Get Resource Recommendations'}
               </button>
             </form>
           </div>
+
           {loading && (
-            <div className="card text-center py-10">
-              <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-slate-400">Gemini AI is analyzing available resources...</p>
-            </div>
+            <div className="rounded-3xl border border-white/8 bg-slate-950/60 p-8 text-center text-slate-400">Evaluating available resources...</div>
           )}
+
           {aiResult && !loading && (
             <AIResponseCard title={aiResult.title} content={aiResult.content} timestamp={aiResult.timestamp} />
           )}

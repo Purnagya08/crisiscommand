@@ -1,18 +1,23 @@
 import React from 'react';
 
 export default function LoadingSpinner({ size = 'md', text = '' }) {
-  const sizes = { sm: 'w-4 h-4', md: 'w-8 h-8', lg: 'w-12 h-12' };
+  const sizes = {
+    sm: 'h-4 w-4',
+    md: 'h-8 w-8',
+    lg: 'h-12 w-12'
+  };
+
   return (
     <div className="flex flex-col items-center justify-center gap-3">
-      <div className={`${sizes[size]} border-2 border-slate-600 border-t-red-500 rounded-full animate-spin`} />
-      {text && <p className="text-slate-400 text-sm">{text}</p>}
+      <div className={`${sizes[size]} animate-spin rounded-full border-2 border-white/10 border-t-rose-400`} />
+      {text && <p className="text-sm text-slate-400">{text}</p>}
     </div>
   );
 }
 
 export function PageLoader({ text = 'Loading...' }) {
   return (
-    <div className="flex items-center justify-center min-h-[300px]">
+    <div className="flex min-h-[320px] items-center justify-center">
       <LoadingSpinner size="lg" text={text} />
     </div>
   );
