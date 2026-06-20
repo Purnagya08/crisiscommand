@@ -3,9 +3,9 @@ const Groq = require('groq-sdk');
 let groqClient = null;
 
 const getGroqClient = () => {
-  if (!process.env.GROQ_API_KEY) return null;
+  if (!process.env.ANAKIN_API_KEY) return null;
   if (!groqClient) {
-    groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    groqClient = new Groq({ apiKey: process.env.ANAKIN_API_KEY });
   }
   return groqClient;
 };
@@ -42,7 +42,7 @@ const systemPrompt = [
 
 const callGroq = async (prompt) => {
   const client = getGroqClient();
-  if (!client) throw new Error('GROQ_API_KEY is not configured');
+  if (!client) throw new Error('ANAKIN_API_KEY is not configured');
 
   const completion = await client.chat.completions.create({
     model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',

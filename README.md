@@ -168,7 +168,7 @@ npm run dev
 PORT=5000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
-GROQ_API_KEY=your_groq_api_key_here
+ANAKIN_API_KEY=your_anakin_api_key_here
 GROQ_MODEL=llama-3.3-70b-versatile
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX=100
@@ -208,4 +208,3 @@ VITE_API_URL=http://localhost:5000
 ## License
 
 This project is intended for hackathon and prototype use.
-

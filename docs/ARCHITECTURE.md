@@ -188,7 +188,7 @@ CrisisCommand/
 PORT=5000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
-GROQ_API_KEY=your_groq_api_key_here
+ANAKIN_API_KEY=your_anakin_api_key_here
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX=100
 ```
@@ -231,6 +231,6 @@ GitHub Repository
                           • Build: npm install
                           • Start: npm start
                           • Health: GET /health
-                          • Env: GROQ_API_KEY (secret)
+                          • Env: ANAKIN_API_KEY (secret)
                                  FRONTEND_URL (Vercel URL)
 ```

@@ -37,7 +37,7 @@ git push -u origin main
 4. Set **Build Command**: `npm ci`
 5. Set **Start Command**: `npm start`
 6. Add Environment Variables:
-   - `GROQ_API_KEY` = your Groq API key
+   - `ANAKIN_API_KEY` = your Anakin API key
    - `NODE_ENV` = `production`
    - `FRONTEND_URL` = *(leave blank for now, update after step 4)*
 7. Click **Create Web Service**
@@ -69,7 +69,7 @@ git push -u origin main
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env — set GROQ_API_KEY
+# Edit .env — set ANAKIN_API_KEY
 npm install
 npm run dev
 # API running at http://localhost:5000
@@ -104,7 +104,7 @@ curl https://your-render-url.onrender.com/health
 | Issue                          | Fix                                                      |
 |-------------------------------|----------------------------------------------------------|
 | CORS errors in browser        | Ensure FRONTEND_URL is set correctly in Render           |
-| AI not responding             | Verify GROQ_API_KEY is set in Render env vars            |
+| AI not responding             | Verify ANAKIN_API_KEY is set in Render env vars          |
 | Render service sleeps         | Free tier sleeps after 15 min — first request is slow    |
 | Build fails on Vercel         | Check VITE_API_URL is set in Vercel env variables        |
 | Data resets after redeploy    | Expected — in-memory storage only                        |
