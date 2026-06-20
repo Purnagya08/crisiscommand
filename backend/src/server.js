@@ -4,7 +4,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
 
 const crisisRoutes = require('./routes/crisisRoutes');
 const aiRoutes = require('./routes/aiRoutes');
@@ -53,14 +52,6 @@ app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
-
-app.use('/api', rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: Number(process.env.RATE_LIMIT_MAX) || 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, error: 'Too many requests, please try again later.' }
-}));
 
 app.get('/health', (req, res) => {
   res.json({

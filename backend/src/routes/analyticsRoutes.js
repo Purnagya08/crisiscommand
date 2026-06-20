@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const controller = require('../controllers/analyticsController');
 
+router.get('/', controller.getOverview);
 router.get('/overview', controller.getOverview);
 router.get('/alerts', controller.getAlerts);
 router.patch('/alerts/:id/read', controller.markAlertRead);
