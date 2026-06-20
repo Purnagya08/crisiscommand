@@ -1,11 +1,13 @@
 const router = require('express').Router();
-const ctrl   = require('../controllers/resourceController');
+const controller = require('../controllers/resourceController');
+const { validate } = require('../middleware/validate');
 
-router.get ('/',              ctrl.getAllResources);
-router.get ('/meta/types',    ctrl.getResourceTypes);
-router.get ('/:id',           ctrl.getResourceById);
-router.post('/',              ctrl.createResource);
-router.put ('/:id',           ctrl.updateResource);
-router.patch('/:id/status',   ctrl.updateResourceStatus);
+router.get('/', controller.getAllResources);
+router.get('/meta/types', controller.getResourceTypes);
+router.get('/:id', controller.getResourceById);
+router.post('/', validate(['name', 'type']), controller.createResource);
+router.put('/:id', controller.updateResource);
+router.patch('/:id/status', controller.updateResourceStatus);
+router.delete('/:id', controller.deleteResource);
 
 module.exports = router;

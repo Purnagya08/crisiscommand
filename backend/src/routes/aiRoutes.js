@@ -1,11 +1,11 @@
 const router = require('express').Router();
-const ctrl   = require('../controllers/aiController');
+const controller = require('../controllers/aiController');
 
-router.post('/analyze/:crisisId',   ctrl.analyzeCrisis);
-router.post('/recommend-resources', ctrl.recommendResources);
-router.post('/generate-report',     ctrl.generateReport);
-router.post('/chat',                ctrl.chat);
-router.post('/prioritize',          ctrl.prioritizeCrises);
-router.get ('/logs',                ctrl.getAiLogs);
+router.post('/analyze/:crisisId', controller.analyzeCrisis);
+router.post('/recommend-resources', controller.recommendResources);
+router.post('/generate-report', controller.generateReport);
+router.post('/chat', controller.chat);
+router.post('/prioritize', controller.prioritizeCrises);
+router.get('/logs', controller.getAiLogs);
 
 module.exports = router;

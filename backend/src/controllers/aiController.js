@@ -1,225 +1,141 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { v4: uuidv4 } = require('uuid');
 const { StoreHelper } = require('../data/store');
 const { createError } = require('../middleware/errorHandler');
 
-let genAI = null;
+const timestamp = () => new Date().toISOString();
 
-const getGenAI = () => {
-  if (!genAI) {
-    if (!process.env.GEMINI_API_KEY) throw createError('GEMINI_API_KEY is not configured', 500);
-    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const logAiInteraction = ({ type, crisisId = null, prompt, response }) => {
+  return StoreHelper.addAiLog({
+    id: uuidv4(),
+    type,
+    crisisId,
+    prompt,
+    response,
+    timestamp: timestamp()
+  });
+};
+
+const summarizeResources = () => {
+  const resources = StoreHelper.getAllResources();
+  const available = resources.filter((resource) => resource.status === 'available');
+  const standby = resources.filter((resource) => resource.status === 'on_standby');
+  return { resources, available, standby };
+};
+
+const analyzeCrisis = (req, res, next) => {
+  const crisis = StoreHelper.getCrisisById(req.params.crisisId);
+  if (!crisis) return next(createError('Crisis not found', 404));
+
+  const prompt = `Analyze crisis: ${crisis.title}`;
+  const response = [
+    `Situation Assessment: ${crisis.title} is a ${crisis.severity} ${crisis.category} incident in ${crisis.location && crisis.location.city ? crisis.location.city : 'an unknown location'}.`,
+    `Immediate Actions: maintain command visibility, verify field conditions, protect affected civilians, and keep assigned teams coordinated.`,
+    `Resource Recommendations: review assigned teams (${(crisis.assignedTeams || []).join(', ') || 'none assigned'}) and deploy available support if conditions worsen.`,
+    `Communication Guidance: provide calm public updates with location, safety instructions, and next update timing.`,
+    `Estimated Resolution Time: depends on field reports and resource availability.`
+  ].join('\n\n');
+
+  const analysis = { prompt, response, timestamp: timestamp(), mode: 'local_stub' };
+  StoreHelper.updateCrisis(crisis.id, { aiAnalysis: analysis });
+  logAiInteraction({ type: 'crisis_analysis', crisisId: crisis.id, prompt, response });
+
+  return res.json({
+    success: true,
+    data: { crisisId: crisis.id, analysis: response, timestamp: analysis.timestamp, mode: 'local_stub' }
+  });
+};
+
+const recommendResources = (req, res) => {
+  const crisis = req.body.crisisId ? StoreHelper.getCrisisById(req.body.crisisId) : null;
+  const context = crisis ? `${crisis.title} (${crisis.severity})` : (req.body.context || 'General emergency situation');
+  const { available, standby } = summarizeResources();
+
+  const response = [
+    `Resource Context: ${context}`,
+    `Priority Resources: ${available.slice(0, 3).map((resource) => resource.name).join(', ') || 'No available resources currently listed'}.`,
+    `Standby Resources: ${standby.slice(0, 3).map((resource) => resource.name).join(', ') || 'No standby resources currently listed'}.`,
+    'Allocation Strategy: deploy closest relevant teams first, preserve backup capacity, and update resource status after assignment.',
+    'Resource Gaps: add missing specialty teams if the incident requires capabilities not listed in the resource inventory.'
+  ].join('\n\n');
+
+  logAiInteraction({ type: 'resource_recommendation', crisisId: crisis ? crisis.id : null, prompt: context, response });
+  res.json({ success: true, data: { recommendations: response, timestamp: timestamp(), mode: 'local_stub' } });
+};
+
+const generateReport = (req, res, next) => {
+  const crisis = StoreHelper.getCrisisById(req.body.crisisId);
+  if (!crisis) return next(createError('Crisis not found', 404));
+
+  const response = [
+    `SITREP: ${crisis.title}`,
+    `Status: ${crisis.status}`,
+    `Severity: ${crisis.severity}`,
+    `Location: ${crisis.location && crisis.location.city ? crisis.location.city : 'Unknown'}`,
+    `Affected Population: ${crisis.affectedCount}`,
+    `Actions Taken: ${(crisis.timeline || []).map((item) => item.event).join('; ') || 'No timeline entries available.'}`,
+    `Assigned Teams: ${(crisis.assignedTeams || []).join(', ') || 'No teams assigned.'}`,
+    'Next Objectives: stabilize the incident, maintain public communications, and update the timeline as conditions change.'
+  ].join('\n\n');
+
+  logAiInteraction({ type: 'sitrep_report', crisisId: crisis.id, prompt: `Generate SITREP for ${crisis.title}`, response });
+  return res.json({ success: true, data: { report: response, crisisId: crisis.id, generatedAt: timestamp(), mode: 'local_stub' } });
+};
+
+const chat = (req, res, next) => {
+  const { message, context } = req.body;
+  if (!message || !message.trim()) return next(createError('Message is required', 400));
+
+  const stats = StoreHelper.getStats();
+  const response = [
+    `I am running in local stub mode for now.`,
+    `Current snapshot: ${stats.activeCrises} active crises, ${stats.criticalCrises} critical crises, ${stats.deployedResources} resources deployed.`,
+    context ? `Context noted: ${context}` : 'No extra context was provided.',
+    `For your question "${message.trim()}", start by confirming incident facts, assigning an owner, and updating the command timeline.`
+  ].join('\n\n');
+
+  logAiInteraction({ type: 'chat', prompt: message.trim(), response });
+  return res.json({ success: true, data: { reply: response, timestamp: timestamp(), mode: 'local_stub' } });
+};
+
+const prioritizeCrises = (req, res) => {
+  const activeCrises = StoreHelper.getAllCrises().filter((crisis) => crisis.status === 'active');
+  const severityRank = { critical: 4, high: 3, medium: 2, low: 1 };
+
+  if (activeCrises.length === 0) {
+    const response = 'No active crises to prioritize.';
+    logAiInteraction({ type: 'prioritization', prompt: 'Prioritize active crises', response });
+    return res.json({ success: true, data: { prioritization: response, activeCrisesCount: 0, timestamp: timestamp(), mode: 'local_stub' } });
   }
-  return genAI;
+
+  const ranked = [...activeCrises].sort((a, b) => {
+    const severityDelta = (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0);
+    if (severityDelta !== 0) return severityDelta;
+    return Number(b.affectedCount || 0) - Number(a.affectedCount || 0);
+  });
+
+  const response = ranked.map((crisis, index) => (
+    `${index + 1}. ${crisis.title} - ${crisis.severity} severity, ${crisis.affectedCount} affected, status ${crisis.status}.`
+  )).join('\n');
+
+  const finalResponse = `${response}\n\nImmediate Plan: focus command attention on the top-ranked incident, confirm resource coverage, and update all active timelines within 30 minutes.`;
+  logAiInteraction({ type: 'prioritization', prompt: 'Prioritize active crises', response: finalResponse });
+
+  return res.json({
+    success: true,
+    data: { prioritization: finalResponse, activeCrisesCount: activeCrises.length, timestamp: timestamp(), mode: 'local_stub' }
+  });
 };
 
-const callGemini = async (prompt) => {
-  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash' });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
-};
-
-// POST /api/ai/analyze/:crisisId
-const analyzeCrisis = async (req, res, next) => {
-  try {
-    const crisis = StoreHelper.getCrisisById(req.params.crisisId);
-    if (!crisis) return next(createError('Crisis not found', 404));
-
-    const prompt = `
-You are an emergency management AI assistant. Analyze the following crisis and provide a structured response.
-
-CRISIS DETAILS:
-- Title: ${crisis.title}
-- Category: ${crisis.category}
-- Severity: ${crisis.severity}
-- Status: ${crisis.status}
-- Location: ${crisis.location?.city || 'Unknown'}
-- Affected People: ${crisis.affectedCount}
-- Description: ${crisis.description}
-- Reported By: ${crisis.reportedBy}
-- Timeline Events: ${crisis.timeline?.map(t => `${t.event} (${t.actor})`).join('; ') || 'None'}
-
-Provide a comprehensive crisis analysis with the following sections:
-1. SITUATION ASSESSMENT (2-3 sentences about current state and risk level)
-2. IMMEDIATE ACTIONS (3-5 specific actions to take in the next 2 hours)
-3. RESOURCE RECOMMENDATIONS (specific teams/resources needed)
-4. RISK ESCALATION (what could make this worse and probability)
-5. COMMUNICATION GUIDANCE (what to tell the public and stakeholders)
-6. ESTIMATED RESOLUTION TIME (realistic timeline)
-
-Format your response clearly with section headers. Be specific, actionable, and concise.
-`;
-
-    const responseText = await callGemini(prompt);
-    const analysis = { prompt, response: responseText, timestamp: new Date().toISOString() };
-
-    StoreHelper.updateCrisis(crisis.id, { aiAnalysis: analysis });
-    StoreHelper.addAiLog({ id: uuidv4(), crisisId: crisis.id, type: 'crisis_analysis', ...analysis });
-
-    res.json({ success: true, data: { crisisId: crisis.id, analysis: responseText, timestamp: analysis.timestamp } });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// POST /api/ai/recommend-resources
-const recommendResources = async (req, res, next) => {
-  try {
-    const { crisisId } = req.body;
-    const crisis    = crisisId ? StoreHelper.getCrisisById(crisisId) : null;
-    const resources = StoreHelper.getAllResources();
-
-    const crisisContext = crisis
-      ? `Crisis: ${crisis.title} | Severity: ${crisis.severity} | Category: ${crisis.category} | Affected: ${crisis.affectedCount} people`
-      : req.body.context || 'General emergency situation';
-
-    const availableResources = resources.filter(r => r.status !== 'unavailable');
-
-    const prompt = `
-You are an emergency resource allocation AI. Recommend optimal resource allocation.
-
-SITUATION: ${crisisContext}
-
-AVAILABLE RESOURCES:
-${availableResources.map(r => `- ${r.name} (Type: ${r.type}, Status: ${r.status}, Capacity: ${r.capacity}, Specialization: ${r.specialization})`).join('\n')}
-
-Provide resource recommendations:
-1. PRIORITY RESOURCES (list top 3 most critical resources to deploy and why)
-2. ALLOCATION STRATEGY (how to distribute resources effectively)
-3. BACKUP RESOURCES (what to have on standby)
-4. RESOURCE GAPS (what additional resources are needed that aren't available)
-5. COORDINATION TIPS (how teams should work together)
-
-Be specific and reference resources by name.
-`;
-
-    const responseText = await callGemini(prompt);
-    StoreHelper.addAiLog({ id: uuidv4(), crisisId: crisisId || null, type: 'resource_recommendation', prompt, response: responseText, timestamp: new Date().toISOString() });
-
-    res.json({ success: true, data: { recommendations: responseText, timestamp: new Date().toISOString() } });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// POST /api/ai/generate-report
-const generateReport = async (req, res, next) => {
-  try {
-    const { crisisId } = req.body;
-    const crisis = crisisId ? StoreHelper.getCrisisById(crisisId) : null;
-    if (!crisis) return next(createError('Crisis not found', 404));
-
-    const prompt = `
-Generate a formal emergency management situation report (SITREP) for:
-
-CRISIS: ${crisis.title}
-Category: ${crisis.category} | Severity: ${crisis.severity} | Status: ${crisis.status}
-Location: ${crisis.location?.city || 'Unknown'}
-Reported: ${crisis.createdAt}
-Affected Population: ${crisis.affectedCount}
-Description: ${crisis.description}
-Assigned Teams: ${crisis.assignedTeams?.join(', ') || 'None'}
-
-Timeline:
-${crisis.timeline?.map(t => `[${new Date(t.timestamp).toLocaleTimeString()}] ${t.event} — ${t.actor}`).join('\n') || 'No timeline entries'}
-
-Write a professional SITREP report including:
-- SITUATION OVERVIEW
-- CURRENT STATUS
-- ACTIONS TAKEN
-- ONGOING OPERATIONS
-- NEXT 24-HOUR OBJECTIVES
-- RESOURCE STATUS
-- RECOMMENDATIONS
-
-Use formal emergency management language. Keep it concise but complete.
-`;
-
-    const responseText = await callGemini(prompt);
-    StoreHelper.addAiLog({ id: uuidv4(), crisisId: crisis.id, type: 'sitrep_report', prompt, response: responseText, timestamp: new Date().toISOString() });
-
-    res.json({ success: true, data: { report: responseText, crisisId: crisis.id, generatedAt: new Date().toISOString() } });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// POST /api/ai/chat
-const chat = async (req, res, next) => {
-  try {
-    const { message, context } = req.body;
-    if (!message) return next(createError('Message is required', 400));
-
-    const stats  = StoreHelper.getStats();
-    const crises = StoreHelper.getAllCrises().slice(0, 5);
-
-    const prompt = `
-You are CrisisCommand AI — an expert emergency management assistant.
-You help operators manage crises, allocate resources, and make decisions.
-
-CURRENT SYSTEM OVERVIEW:
-- Total Active Crises: ${stats.activeCrises}
-- Critical Crises: ${stats.criticalCrises}
-- Deployed Resources: ${stats.deployedResources}
-- Total Affected People: ${stats.totalAffected}
-
-RECENT CRISES:
-${crises.map(c => `- ${c.title} [${c.severity.toUpperCase()}] [${c.status.toUpperCase()}] — ${c.location?.city}`).join('\n')}
-
-${context ? `ADDITIONAL CONTEXT: ${context}` : ''}
-
-USER QUESTION: ${message}
-
-Respond as a knowledgeable, calm emergency management expert. Be concise, practical, and actionable.
-If you don't have enough information, ask for clarification. Keep responses under 200 words unless a detailed plan is needed.
-`;
-
-    const responseText = await callGemini(prompt);
-    StoreHelper.addAiLog({ id: uuidv4(), crisisId: null, type: 'chat', prompt: message, response: responseText, timestamp: new Date().toISOString() });
-
-    res.json({ success: true, data: { reply: responseText, timestamp: new Date().toISOString() } });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// POST /api/ai/prioritize
-const prioritizeCrises = async (req, res, next) => {
-  try {
-    const crises = StoreHelper.getAllCrises().filter(c => c.status === 'active');
-    if (crises.length === 0) return res.json({ success: true, data: { prioritization: 'No active crises to prioritize.', timestamp: new Date().toISOString() } });
-
-    const prompt = `
-You are an emergency management prioritization AI.
-
-ACTIVE CRISES TO PRIORITIZE:
-${crises.map((c, i) => `${i + 1}. ${c.title}
-   - Severity: ${c.severity} | Category: ${c.category}
-   - Affected: ${c.affectedCount} people | Location: ${c.location?.city}
-   - Description: ${c.description}`).join('\n\n')}
-
-Create a prioritization plan:
-1. PRIORITY RANKING (rank crises 1 to ${crises.length} with justification)
-2. CRITICAL DECISION POINT (which crisis needs immediate command attention)
-3. RESOURCE REALLOCATION (if resources must be shared, how to split them)
-4. 30-MINUTE ACTION PLAN (what to do right now across all crises)
-
-Be decisive and clear. Lives depend on correct prioritization.
-`;
-
-    const responseText = await callGemini(prompt);
-    StoreHelper.addAiLog({ id: uuidv4(), crisisId: null, type: 'prioritization', prompt, response: responseText, timestamp: new Date().toISOString() });
-
-    res.json({ success: true, data: { prioritization: responseText, activeCrisesCount: crises.length, timestamp: new Date().toISOString() } });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// GET /api/ai/logs
 const getAiLogs = (req, res) => {
   const logs = StoreHelper.getAiLogs();
   res.json({ success: true, count: logs.length, data: logs });
 };
 
-module.exports = { analyzeCrisis, recommendResources, generateReport, chat, prioritizeCrises, getAiLogs };
+module.exports = {
+  analyzeCrisis,
+  recommendResources,
+  generateReport,
+  chat,
+  prioritizeCrises,
+  getAiLogs
+};

@@ -1,12 +1,12 @@
 {
   "name": "crisiscommand-backend",
   "version": "1.0.0",
-  "description": "CrisisCommand Backend API - Crisis Management with AI",
+  "description": "CrisisCommand backend API with Express and in-memory storage",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "echo \"No tests yet\" && exit 0"
+    "test": "node -e \"console.log('No tests configured')\""
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -15,8 +15,7 @@
     "express-rate-limit": "^7.2.0",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
-    "uuid": "^9.0.1",
-    "@google/generative-ai": "^0.15.0"
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

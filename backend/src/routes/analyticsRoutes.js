@@ -1,9 +1,9 @@
 const router = require('express').Router();
-const ctrl   = require('../controllers/analyticsController');
+const controller = require('../controllers/analyticsController');
 
-router.get ('/overview',          ctrl.getOverview);
-router.get ('/alerts',            ctrl.getAlerts);
-router.patch('/alerts/:id/read',  ctrl.markAlertRead);
-router.get ('/timeline',          ctrl.getTimeline);
+router.get('/overview', controller.getOverview);
+router.get('/alerts', controller.getAlerts);
+router.patch('/alerts/:id/read', controller.markAlertRead);
+router.get('/timeline', controller.getTimeline);
 
 module.exports = router;
