@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, Brain, Boxes, Plus, ShieldAlert, Siren, Users } from 'lucide-react';
 import { analyticsApi } from '../services/api';
 import { useCrises } from '../hooks/useCrises';
+import { useAnalytics } from '../hooks/useAnalytics';
 import StatCard from '../components/dashboard/StatCard';
 import CrisisCard from '../components/crisis/CrisisCard';
 import TimelinePanel from '../components/common/TimelinePanel';
@@ -10,26 +11,29 @@ import { PageLoader } from '../components/common/LoadingSpinner';
 import { formatNumber } from '../utils/helpers';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState(null);
   const [timeline, setTimeline] = useState([]);
-  const [loading, setLoading] = useState(true);
   const { crises, loading: crisesLoading } = useCrises({ status: 'active' });
+  const { stats, loading } = useAnalytics();
 
   useEffect(() => {
-    const load = async () => {
+    let active = true;
+
+    const loadTimeline = async () => {
       try {
-        const [overviewRes, timelineRes] = await Promise.all([
-          analyticsApi.getOverview(),
-          analyticsApi.getTimeline()
-        ]);
-        setStats(overviewRes.data);
-        setTimeline(timelineRes.data || []);
-      } finally {
-        setLoading(false);
+        const response = await analyticsApi.getTimeline();
+        if (active) setTimeline(response.data || []);
+      } catch {
+        // Keep the last successful activity feed if polling fails.
       }
     };
 
-    load();
+    loadTimeline();
+    const interval = setInterval(loadTimeline, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, []);
 
   if (loading) return <PageLoader text="Loading command center..." />;

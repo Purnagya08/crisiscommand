@@ -56,7 +56,33 @@ export default function ResourcesPage() {
   }, []);
 
   useEffect(() => {
-    load();
+    let active = true;
+
+    const refresh = async ({ silent = false } = {}) => {
+      try {
+        if (!silent) setLoading(true);
+        const params = {};
+        if (filterStatus) params.status = filterStatus;
+        if (filterType) params.type = filterType;
+        const response = await resourceApi.getAll(params);
+        if (!active) return;
+        setResources(response.data || []);
+      } catch (err) {
+        if (!silent) toast.error(err.message);
+      } finally {
+        if (active && !silent) setLoading(false);
+      }
+    };
+
+    refresh({ silent: false });
+    const interval = setInterval(() => {
+      refresh({ silent: true });
+    }, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, [filterStatus, filterType]);
 
   const handleStatusChange = async (id, status) => {

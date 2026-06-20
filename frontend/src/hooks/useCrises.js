@@ -6,20 +6,39 @@ export const useCrises = (filters = {}) => {
   const [crises,  setCrises]  = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
+  const filterKey = JSON.stringify(filters);
 
-  const fetch = useCallback(async () => {
+  const fetch = useCallback(async ({ silent = false } = {}) => {
     try {
-      setLoading(true); setError(null);
+      if (!silent) setLoading(true);
+      setError(null);
       const res = await crisisApi.getAll(filters);
       setCrises(res.data || []);
     } catch (e) {
       setError(e.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  }, [JSON.stringify(filters)]);
+  }, [filterKey]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => {
+    let active = true;
+
+    const run = async () => {
+      if (!active) return;
+      await fetch({ silent: false });
+    };
+
+    run();
+    const interval = setInterval(() => {
+      fetch({ silent: true });
+    }, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [fetch]);
 
   const updateStatus = async (id, status) => {
     try {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Activity, BarChart3, Bell, CheckCircle2, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { analyticsApi } from '../services/api';
+import { useAnalytics } from '../hooks/useAnalytics';
 import StatCard from '../components/dashboard/StatCard';
 import PageHeader from '../components/common/PageHeader';
 import KPICharts from '../components/analytics/KPICharts';
@@ -10,30 +11,28 @@ import { PageLoader } from '../components/common/LoadingSpinner';
 import { formatNumber, formatTime } from '../utils/helpers';
 
 export default function AnalyticsPage() {
-  const [stats, setStats] = useState(null);
-  const [alerts, setAlerts] = useState([]);
   const [timeline, setTimeline] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { stats, alerts, loading } = useAnalytics();
 
   useEffect(() => {
-    const load = async () => {
+    let active = true;
+
+    const loadTimeline = async () => {
       try {
-        const [overviewRes, alertsRes, timelineRes] = await Promise.all([
-          analyticsApi.getOverview(),
-          analyticsApi.getAlerts(),
-          analyticsApi.getTimeline()
-        ]);
-        setStats(overviewRes.data);
-        setAlerts(alertsRes.data || []);
-        setTimeline(timelineRes.data || []);
+        const response = await analyticsApi.getTimeline();
+        if (active) setTimeline(response.data || []);
       } catch (err) {
         toast.error(err.message);
-      } finally {
-        setLoading(false);
       }
     };
 
-    load();
+    loadTimeline();
+    const interval = setInterval(loadTimeline, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const markRead = async (id) => {

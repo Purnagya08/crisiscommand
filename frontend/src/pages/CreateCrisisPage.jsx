@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -20,6 +20,30 @@ export default function CreateCrisisPage() {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [meta, setMeta] = useState({
+    categories: Object.keys(categoryLabels),
+    severities: ['low', 'medium', 'high', 'critical']
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    crisisApi.getEnums()
+      .then((response) => {
+        if (!active) return;
+        setMeta({
+          categories: response.data?.category || Object.keys(categoryLabels),
+          severities: response.data?.severity || ['low', 'medium', 'high', 'critical']
+        });
+      })
+      .catch(() => {
+        // Fall back to local defaults if the metadata endpoint is unavailable.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const set = (key, value) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -31,6 +55,11 @@ export default function CreateCrisisPage() {
     if (!form.title.trim()) nextErrors.title = 'Title is required';
     if (!form.description.trim()) nextErrors.description = 'Description is required';
     if (!form.reportedBy.trim()) nextErrors.reportedBy = 'Reporter name is required';
+    if (!form.category) nextErrors.category = 'Category is required';
+    if (!form.severity) nextErrors.severity = 'Severity is required';
+    if (form.affectedCount && Number.isNaN(Number.parseInt(form.affectedCount, 10))) {
+      nextErrors.affectedCount = 'Affected population must be a number';
+    }
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -46,7 +75,7 @@ export default function CreateCrisisPage() {
         affectedCount: Number.parseInt(form.affectedCount, 10) || 0,
         location: { city: form.location || 'Unknown', coordinates: null }
       });
-      toast.success('Crisis reported successfully');
+      toast.success('Crisis created successfully');
       navigate(`/crises/${response.data.id}`);
     } catch (err) {
       toast.error(err.message);
@@ -110,10 +139,16 @@ export default function CreateCrisisPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-300">Category *</label>
                 <select value={form.category} onChange={(event) => set('category', event.target.value)} className="w-full rounded-2xl border border-white/8 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none">
-                  {Object.entries(categoryLabels).map(([value, label]) => (
+                  {meta.categories.map((value) => (
+                    <option key={value} value={value}>{categoryLabels[value] || value}</option>
+                  ))}
+                  {Object.entries(categoryLabels)
+                    .filter(([value]) => !meta.categories.includes(value))
+                    .map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
+                {errors.category && <p className="mt-2 text-xs text-rose-300">{errors.category}</p>}
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-300">Severity *</label>
@@ -122,11 +157,13 @@ export default function CreateCrisisPage() {
                   onChange={(event) => set('severity', event.target.value)}
                   className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none ${severityStyles[form.severity]}`}
                 >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="critical">Critical</option>
+                  {meta.severities.map((value) => (
+                    <option key={value} value={value}>
+                      {value.charAt(0).toUpperCase() + value.slice(1)}
+                    </option>
+                  ))}
                 </select>
+                {errors.severity && <p className="mt-2 text-xs text-rose-300">{errors.severity}</p>}
               </div>
             </div>
           </div>
@@ -152,6 +189,7 @@ export default function CreateCrisisPage() {
                 className="w-full rounded-2xl border border-white/8 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none"
                 placeholder="Estimated count"
               />
+              {errors.affectedCount && <p className="mt-2 text-xs text-rose-300">{errors.affectedCount}</p>}
             </div>
           </div>
 

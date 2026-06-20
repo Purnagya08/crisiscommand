@@ -7,21 +7,34 @@ export const useAnalytics = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const load = async () => {
+    let active = true;
+
+    const load = async ({ silent = false } = {}) => {
       try {
+        if (!silent) setLoading(true);
         const [statsRes, alertsRes] = await Promise.all([
           analyticsApi.getOverview(),
           analyticsApi.getAlerts(),
         ]);
+        if (!active) return;
         setStats(statsRes.data);
         setAlerts(alertsRes.data || []);
       } catch (e) {
         console.error('Analytics load failed:', e.message);
       } finally {
-        setLoading(false);
+        if (active && !silent) setLoading(false);
       }
     };
-    load();
+
+    load({ silent: false });
+    const interval = setInterval(() => {
+      load({ silent: true });
+    }, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const markRead = async (id) => {
