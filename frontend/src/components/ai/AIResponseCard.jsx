@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Bot, CheckCheck, Copy } from 'lucide-react';
+import { Bot, CheckCheck, Copy, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDate } from '../../utils/helpers';
 
-export default function AIResponseCard({ title, content, timestamp }) {
+export default function AIResponseCard({ title, content, timestamp, fileName }) {
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
@@ -17,46 +17,73 @@ export default function AIResponseCard({ title, content, timestamp }) {
     }
   };
 
+  const exportReport = () => {
+    if (!content) return;
+
+    const safeName = (fileName || title || 'report')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${safeName || 'report'}.txt`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    toast.success('Report exported');
+  };
+
   const renderContent = (text) => {
     if (!text) return null;
 
-    return text.split('\n').map((line, index) => {
-      const trimmed = line.trim();
-      if (!trimmed) return <div key={index} className="h-2" />;
-      if (trimmed.startsWith('#')) {
+    return String(text)
+      .split('\n')
+      .map((line, index) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={index} className="h-2" />;
+
+        if (/^#+\s/.test(trimmed)) {
+          return (
+            <h4 key={index} className="mt-4 text-sm font-semibold text-red-200">
+              {trimmed.replace(/^#+\s*/, '')}
+            </h4>
+          );
+        }
+
+        if (/^\d+\.\s/.test(trimmed)) {
+          return (
+            <p key={index} className="ml-4 text-sm leading-6 text-slate-200">
+              {trimmed}
+            </p>
+          );
+        }
+
+        if (/^[-*]\s/.test(trimmed)) {
+          return (
+            <p key={index} className="ml-4 text-sm leading-6 text-slate-300">
+              • {trimmed.replace(/^[-*]\s*/, '')}
+            </p>
+          );
+        }
+
+        if (/^[A-Z][A-Z\s]+:/.test(trimmed)) {
+          return (
+            <h4 key={index} className="mt-3 text-xs font-semibold uppercase tracking-[0.25em] text-orange-200">
+              {trimmed}
+            </h4>
+          );
+        }
+
         return (
-          <h4 key={index} className="mt-4 text-sm font-semibold text-red-200">
-            {trimmed.replace(/^#+\s*/, '')}
-          </h4>
-        );
-      }
-      if (/^\d+\./.test(trimmed)) {
-        return (
-          <p key={index} className="ml-4 text-sm leading-6 text-slate-200">
+          <p key={index} className="text-sm leading-6 text-slate-300">
             {trimmed}
           </p>
         );
-      }
-      if (/^[-*]/.test(trimmed)) {
-        return (
-          <p key={index} className="ml-4 text-sm leading-6 text-slate-300">
-            • {trimmed.replace(/^[-*]\s*/, '')}
-          </p>
-        );
-      }
-      if (/^[A-Z][A-Z\s]+:/.test(trimmed)) {
-        return (
-          <h4 key={index} className="mt-3 text-xs font-semibold uppercase tracking-[0.25em] text-orange-200">
-            {trimmed}
-          </h4>
-        );
-      }
-      return (
-        <p key={index} className="text-sm leading-6 text-slate-300">
-          {trimmed}
-        </p>
-      );
-    });
+      });
   };
 
   return (
@@ -71,16 +98,28 @@ export default function AIResponseCard({ title, content, timestamp }) {
             {timestamp && <p className="text-xs text-slate-500">{formatDate(timestamp)}</p>}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={copy}
-          className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-xs text-slate-200 transition hover:bg-white/10"
-        >
-          <span className="inline-flex items-center gap-2">
-            {copied ? <CheckCheck size={14} className="text-emerald-300" /> : <Copy size={14} />}
-            {copied ? 'Copied' : 'Copy'}
-          </span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={copy}
+            className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-xs text-slate-200 transition hover:bg-white/10"
+          >
+            <span className="inline-flex items-center gap-2">
+              {copied ? <CheckCheck size={14} className="text-emerald-300" /> : <Copy size={14} />}
+              {copied ? 'Copied' : 'Copy'}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={exportReport}
+            className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-xs text-slate-200 transition hover:bg-white/10"
+          >
+            <span className="inline-flex items-center gap-2">
+              <Download size={14} />
+              Export
+            </span>
+          </button>
+        </div>
       </div>
 
       <div className="max-h-[540px] overflow-y-auto rounded-2xl border border-white/8 bg-black/20 p-4">
